@@ -1,0 +1,8 @@
+Metrics/AbcSize:
+  Max: 18
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+Metrics/PerceivedComplexity:
+  Max: 10
