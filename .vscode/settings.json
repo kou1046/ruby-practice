@@ -1,11 +1,14 @@
 {
   "ruby.useLanguageServer": true,
-  "ruby.format": "rubocop",
+  "solargraph.diagnostics": true,
+  "ruby.format": false,
+  "solargraph.formatting": true,
   "ruby.lint": {
-    "rubocop": true
+    "rubocop": false
   },
   "[ruby]": {
-    "editor.tabSize": 2
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "castwide.solargraph",
+    "editor.formatOnSave": true
   },
-  "editor.formatOnSave": true
 }

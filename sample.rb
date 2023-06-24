@@ -30,6 +30,7 @@ end
 # 壁を表現する
 class Wall
   attr_accessor :point1, :point2
+
   def initialize(point1, point2)
     @point1 = point1.freeze
     @point2 = point2.freeze
@@ -76,7 +77,8 @@ class WallService
     return LeftTopCorner.new(wall.point2) if wall.upward? && wall2.rightward?
     return LeftBottomCorner.new(wall.point2) if wall.leftward? && wall2.upward?
   end
-  def get_external_corder(wall, wall2)
+
+  def get_external_corder(_wall, _wall2)
     puts 'sample'
   end
 end
@@ -84,26 +86,23 @@ end
 # 右壁
 class RightWall < Wall
   def reflect!
-    puts "sample"
+    puts 'sample'
   end
 end
 
 # 左壁
 class Leftwall < Wall
-  def reflect!
-  end
+  def reflect!; end
 end
 
 # 上壁
 class TopWall < Wall
-  def reflect!
-  end
+  def reflect!; end
 end
 
 # 下壁
 class BottomWall < Wall
-  def reflect!
-  end
+  def reflect!; end
 end
 
 # 角
@@ -119,26 +118,22 @@ end
 
 # 右上
 class RightTopCorner < CornerWall
-  def reflect!
-  end
+  def reflect!; end
 end
 
 # 左上
 class LeftTopCorner < CornerWall
-  def reflect!    
-  end
+  def reflect!; end
 end
 
 # 右下
 class RightBottomCorner < CornerWall
-  def reflect!
-  end
+  def reflect!; end
 end
 
 # 左下
-class RightBottomCorner < CornerWall
-  def reflect!
-  end
+class LeftBottomCorner < CornerWall
+  def reflect!; end
 end
 
 # 障害物
@@ -167,4 +162,4 @@ wall_list = [Wall.new(point1, point2), Wall.new(point2, point3), Wall.new(point3
 
 obstacle = Obstacle.new(wall_list)
 
-print obstacle
+print 'sample'

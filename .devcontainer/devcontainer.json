@@ -1,0 +1,11 @@
+{
+  "name": "Existing Dockerfile",
+  "service": "app",
+  "dockerComposeFile": ["./../docker-compose.yml"],
+  "workspaceFolder": "/app",
+  "customizations": {
+    "vscode": {
+      "extensions": ["walkme.Ruby-extension-pack"]
+    }
+  }
+}
