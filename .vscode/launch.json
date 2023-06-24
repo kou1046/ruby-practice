@@ -10,7 +10,6 @@
       "request": "launch",
       "program": "${file}",
       "useBundler": true,
-      "pathToBundler": "bundle.bat"
     }
   ]
 }
