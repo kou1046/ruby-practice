@@ -22,6 +22,7 @@ GEM
     parser (3.2.2.3)
       ast (~> 2.4.1)
       racc
+    pycall (1.4.2)
     racc (1.7.1)
     rainbow (3.1.1)
     rake (13.0.6)
@@ -72,6 +73,7 @@ PLATFORMS
 
 DEPENDENCIES
   debase
+  pycall
   rubocop
   ruby-debug-ide
   solargraph

@@ -1,5 +1,12 @@
 # frozen_string_literal: true
 
+require 'pycall/import'
+
+module Py
+  extend PyCall::Import
+  pyimport('math')
+end
+
 module Location
   LEFT = 0
   RIGHT = 1
@@ -139,16 +146,18 @@ end
 # 障害物
 class Obstacle
   def initialize(walls, wave_pass_through: true)
-    @wall_service = WallService.new(is_internal: wave_pass_through)
-    @walls = _initialize walls
+    @wall_service = WallService.new
+    @walls = _initialize walls, wave_pass_through: wave_pass_through
   end
 
   private
 
-  def _initialize(walls)
+  def _initialize(walls, wave_pass_through: true)
+    return unless wave_pass_through
+
     walls.each_cons(2).each_with_object([]) do |(wall, next_wall), collection|
       collection.push(wall)
-      collection.push(@wall_service.get_corner(wall, next_wall))
+      collection.push(@wall_service.get_internal_corner(wall, next_wall))
     end
   end
 end
@@ -161,5 +170,3 @@ point4 = Point.new(0, 5)
 wall_list = [Wall.new(point1, point2), Wall.new(point2, point3), Wall.new(point3, point4), Wall.new(point4, point1)]
 
 obstacle = Obstacle.new(wall_list)
-
-print 'sample'
