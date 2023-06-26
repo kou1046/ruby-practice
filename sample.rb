@@ -34,11 +34,11 @@ class Wall
   end
 
   def xs
-    [@point1.x, @point2.x].freeze
+    [@point1.x, @point2.x]
   end
 
   def ys
-    [@point1.y, @point2.y].freeze
+    [@point1.y, @point2.y]
   end
 
   def leftward?
@@ -103,11 +103,11 @@ class CornerWall
   end
 
   def xs
-    [@point.x].freeze
+    [@point.x]
   end
 
   def ys
-    [@point.y].freeze
+    [@point.y]
   end
 
   def reflect!
@@ -137,8 +137,10 @@ end
 
 # 障害物
 class Obstacle
+  include Enumerable
+
   def initialize(walls, wave_pass_through: true)
-    @walls = initialize_(walls, wave_pass_through: wave_pass_through)
+    @walls = initialize_(walls, wave_pass_through: wave_pass_through).freeze
   end
 
   def xs
@@ -149,12 +151,16 @@ class Obstacle
     @walls.map(&:ys).flatten
   end
 
+  def each(&block)
+    @walls.each(&block)
+  end
+
   private
 
   def initialize_(walls, wave_pass_through: true)
     loop_walls = walls + [walls[0]]
     loop_walls.each_cons(2).each_with_object([]) do |(wall, next_wall), collection|
-      collection << wall
+      collection << wall.freeze
       corner = if wave_pass_through
                  get_internal_corner(wall, next_wall)
                else
@@ -162,7 +168,7 @@ class Obstacle
                end
       next unless corner
 
-      collection << corner
+      collection << corner.freeze
     end
   end
 
@@ -183,6 +189,48 @@ class Obstacle
 
     nil
   end
+end
+
+# 格子
+class Grid
+  def initialize(width, height, grid_side)
+    @width = width
+    @height = height
+    @grid_side = grid_side
+  end
+
+  def calculate_grid_num(num)
+    (num / @grid_side).floor
+  end
+
+  def row_num
+    calculate_grid_num @width
+  end
+
+  def col_num
+    calculate_grid_num @height
+  end
+end
+
+# 波を作成するクラス
+class WaveFactory
+  def initialize(obstacles, h, dt)
+    raise ArgumentError, 'クーラン条件に基づき. 格子幅hは変化時間dtより大きくすること. ' if dt > h
+
+    x_max = obstacles.map(&:xs).flatten.max
+    y_max = obstacles.map(&:ys).flatten.max
+
+    @grid = Grid.new(x_max, y_max, h)
+    @obstacles = obstacles
+    @dt = dt
+  end
+
+  def create; end
+end
+
+# 波
+class Wave
+  def initialize; end
 end
 
 point1 = Point.new(0, 0)
@@ -213,6 +261,6 @@ wall_list2 = [TopWall.new(p_1, p_2), LeftWall.new(p_2, p_3), TopWall.new(p_3, p_
               BottomWall.new(p_9, p_10), RightWall.new(p_10, p_11), BottomWall.new(p_11, p_12), LeftWall.new(p_12, p_13)]
 obstacle2 = Obstacle.new(wall_list2, wave_pass_through: false)
 
-fig, ax = Py.plt.subplots
-[obstacle, obstacle2].each { |obs| ax.plot obs.xs, obs.ys }
-fig.savefig('sample.png')
+obstacles = [obstacle, obstacle2]
+
+wavefactory = WaveFactory.new(obstacles, 0.01, 0.005)
