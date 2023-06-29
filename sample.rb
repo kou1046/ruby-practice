@@ -117,7 +117,7 @@ class BottomWall < Wall
 end
 
 # 入力がある左壁
-class StrainLeftWall < LeftWall
+class StrainLeftWall < Wall
   def reflect!(value, pre_value, x, y, grid, time)
     2 * value[x,
               y] - pre_value[x,
@@ -129,7 +129,24 @@ class StrainLeftWall < LeftWall
   end
 
   def input(time)
-    time < 3 ? Py.np.cos(2 * Py.np.pi * time) : 0
+    time < 0.3 ? Py.np.cos(2 * Py.np.pi * time) : 0
+  end
+end
+
+# 右の入力
+class StrainRightWall < Wall
+  def reflect!(value, pre_value, x, y, grid, time)
+    2 * value[x,
+              y] - pre_value[x,
+                             y] + grid.alpha * (value[x - 1,
+                                                      y] + value[x,
+                                                                 y + 1] + value[x,
+                                                                                y - 1] - 4 * value[x,
+                                                                                                   y] - 2 * grid.side * input(time))
+  end
+
+  def input(time)
+    time < 0.3 ? Py.np.cos(2 * Py.np.pi * time) : 0
   end
 end
 
@@ -182,24 +199,35 @@ class Obstacle
   end
 
   def xs
-    @walls.map(&:xs).flatten
+    @walls.map(&:xs)
   end
 
   def ys
-    @walls.map(&:ys).flatten
+    @walls.map(&:ys)
+  end
+
+  def wall_classes
+    @walls.map { |wall| wall.class.name.to_sym }
   end
 
   def reflect!(inplaced_value, value, pre_value, grid, time)
-    (@walls + [@walls[0]]).each_cons(2) do |wall, next_wall|
+    ([@walls[-1]] + @walls + [@walls[0]]).each_cons(3) do |prev_wall, wall, next_wall|
       xs, ys = grid.wall_indices(wall)
-      corner = get_corner(wall, next_wall)
-      if corner
+      prev_corner = get_corner(prev_wall, wall)
+      next_corner = get_corner(wall, next_wall)
+      if prev_corner
+        xs.delete_at(0)
+        ys.delete_at(0)
+      end
+      if next_corner
         xs.delete_at(-1)
         ys.delete_at(-1)
-        x, y = grid.corner_index(corner)
-        inplaced_value[x, y] = corner.reflect!(value, pre_value, x, y, grid, time)
+        x, y = grid.corner_index(next_corner)
+        inplaced_value[x, y] = next_corner.reflect!(value, pre_value, x, y, grid, time)
+        disable_internal_corner_reflecton(inplaced_value, wall, next_corner, x, y)
       end
       inplaced_value[xs, ys] = wall.reflect!(value, pre_value, Py.np.array(xs), Py.np.array(ys), grid, time)
+      disable_internal_reflection(inplaced_value, wall, Py.np.array(xs), Py.np.array(ys))
     end
   end
 
@@ -229,6 +257,25 @@ class Obstacle
     return LeftBottomCorner.new(wall.point2) if wall.downward? && wall2.rightward?
 
     nil
+  end
+
+  def disable_internal_reflection(inplaced_value, wall, x, y)
+    return if @wave_pass_through
+
+    inplaced_value[x - 1, y] = 0 if wall.downward?
+    inplaced_value[x + 1, y] = 0 if wall.upward?
+    inplaced_value[x, y - 1] = 0 if wall.leftward?
+    inplaced_value[x, y + 1] = 0 if wall.rightward?
+  end
+
+  def disable_internal_corner_reflecton(inplaced_value, wall, corner, x, y)
+    return if @wave_pass_through
+    return unless corner
+
+    inplaced_value[[x, x - 1], [y + 1, y]] = 0 if wall.downward? # 左下角
+    inplaced_value[[x, x + 1], [y - 1, y]] = 0 if wall.upward? # 右上角
+    inplaced_value[[x, x - 1], [y - 1, y]] = 0 if wall.leftward? # 左上角
+    inplaced_value[[x, x + 1], [y + 1, y]] = 0 if wall.rightward? # 右上角
   end
 end
 
@@ -301,8 +348,7 @@ class WaveFactory
 
   def create
     value_r, value_l, value_t, value_b = shift_value
-    new_value = 2 * @wave_value - @pre_wave_value \
-                + @grid.alpha * (value_l + value_r + value_b + value_t - 4 * @wave_value)
+    new_value = 2 * @wave_value - @pre_wave_value + @grid.alpha * (value_l + value_r + value_b + value_t - 4 * @wave_value)
 
     @obstacles.each { |obstacle| obstacle.reflect!(new_value, @wave_value, @pre_wave_value, @grid, @time) }
 
@@ -333,9 +379,9 @@ class Wave
   end
 end
 
-width = 5
-height = 5
-h = 0.05
+width = 5.0
+height = 5.0
+h = 0.02
 dt = 0.01
 
 grid = Grid.new(width, height, h, dt)
@@ -367,24 +413,22 @@ wall_list2 = [BottomWall.new(p_1, p_2), RightWall.new(p_2, p_3), BottomWall.new(
               BottomWall.new(p_5, p_6), LeftWall.new(p_6, p_7), TopWall.new(p_7, p_8), LeftWall.new(p_8, p_9),
               TopWall.new(p_9, p_10), RightWall.new(p_10, p_11), TopWall.new(p_11, p_12), RightWall.new(p_12, p_13)]
 
-wall_list3 = [StrainLeftWall.new(Point.new(0.0, 2.0), Point.new(0.0, 4.0))]
+wall_list3 = [StrainLeftWall.new(Point.new(0, 2.0), Point.new(0, 4.0))]
 
 obstacle2 = Obstacle.new(wall_list2, wave_pass_through: false)
 obstacle3 = Obstacle.new(wall_list3, wave_pass_through: true)
 obstacles = [obstacle, obstacle2, obstacle3]
+wavefactory = WaveFactory.new(grid, obstacles)
 
 fig, ax = Py.plt.subplots
 obstacles.each { |obs| ax.plot(obs.xs, obs.ys, color: :k) }
-wavefactory = WaveFactory.new(grid, obstacles)
 
-times = Py.np.arange(0, 10, dt)
+times = Py.np.arange(0, 5, dt)
 ims = []
 
-(0...times.size).each do |i|
+(0...times.size).each do |_i|
   wave = wavefactory.create
   im = ax.imshow(wave.value.T, cmap: 'binary', extent: [0, 5, 0, 5], vmin: -0.01, vmax: 0.01, origin: 'lower')
   ims << [im]
 end
-
-anim = Py.anim.ArtistAnimation.new(fig, ims, interval: 60)
 anim.save('sample.gif')
