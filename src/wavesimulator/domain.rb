@@ -329,8 +329,15 @@ class WaveFactory
   end
 
   def shift_value
-    [Py.np.roll(@wave_value, -1, 1), Py.np.roll(@wave_value, 1, 1),
-     Py.np.roll(@wave_value, 1, 0), Py.np.roll(@wave_value, -1, 0)]
+    right_shift_value = Py.np.roll(@wave_value, -1, 1)
+    right_shift_value[(..nil), -1] = 0
+    left_shift_value = Py.np.roll(@wave_value, 1, 1)
+    left_shift_value[(..nil), 0] = 0
+    top_shift_value = Py.np.roll(@wave_value, 1, 0)
+    top_shift_value[0] = 0
+    bottom_shift_value = Py.np.roll(@wave_value, -1, 0)
+    bottom_shift_value[-1] = 0
+    [right_shift_value, left_shift_value, top_shift_value, bottom_shift_value]
   end
 end
 
